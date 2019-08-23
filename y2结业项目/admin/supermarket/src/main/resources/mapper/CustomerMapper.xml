@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.CustomerMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.Customer">
+        <id column="id" property="id" />
+        <result column="customer_name" property="customerName" />
+        <result column="customer_linkman" property="customerLinkman" />
+        <result column="customer_phone" property="customerPhone" />
+        <result column="customer_email" property="customerEmail" />
+        <result column="bank" property="bank" />
+        <result column="bank_num" property="bankNum" />
+        <result column="customer_address" property="customerAddress" />
+    </resultMap>
+
+    <!--  客户vo映射 -->
+    <resultMap id="CustomerVoMapper" type="com.superman.supermarket.entity.vo.CustomerVo" extends="BaseResultMap">
+        <result property="shopName" column="shop_name"></result>
+        <result property="empName" column="emp_name"></result>
+        <result property="empPhone" column="emp_phone"></result>
+        <result property="shopId" column="shop_id"></result>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, customer_name, customer_linkman, customer_phone, customer_email, bank, bank_num, pro_address
+    </sql>
+
+    <!--根据条件查询所有客户列表-->
+    <select id="findByList" resultMap="CustomerVoMapper" parameterType="com.superman.supermarket.entity.vo.CustomerVo">
+        SELECT
+        c.id,
+        c.customer_name,
+        e.`emp_name`,
+        c.customer_linkman,
+        c.customer_phone,
+        c.customer_address,
+        s.shop_name
+        FROM customer c
+        INNER JOIN cust_emp_relation cm
+        ON c.id = cm.`customer_id`
+        INNER JOIN employee e
+        ON cm.`emp_id` = e.`id`
+        INNER JOIN shop s
+        ON e.shop_id = s.id
+        <where>
+            <if test="condition != null and condition != ''" >
+                and c.`customer_name` like CONCAT('%',#{condition},'%')OR e.`emp_name` LIKE CONCAT('%',#{condition},'%')OR customer_linkman LIKE CONCAT('%',#{condition},'%')
+                OR c.customer_address LIKE CONCAT('%',#{condition},'%')OR c.customer_phone LIKE CONCAT('%',#{condition},'%')
+            </if>
+        </where>
+    </select>
+
+    <!--点击详情查询客户信息-->
+    <select id="findByListCust" resultMap="CustomerVoMapper">
+       SELECT
+        c.id,
+        c.customer_name,
+        e.`emp_name`,
+        e.`emp_phone`,
+        c.customer_linkman,
+        c.customer_phone,
+        c.customer_address,
+        c.`bank`,
+        c.`bank_num`,
+        c.`customer_email`
+        FROM customer c
+        INNER JOIN cust_emp_relation cm
+        ON c.id = cm.`customer_id`
+        INNER JOIN employee e
+        ON cm.`emp_id` = e.`id`
+        where c.id = #{id}
+    </select>
+
+    <!--查询客户信息-->
+    <select id="findByMessage" resultMap="CustomerVoMapper" parameterType="com.superman.supermarket.entity.vo.CustomerVo">
+        SELECT
+        c.`id`,
+        c.`customer_name`,
+        e.`shop_id`,
+        c.`customer_linkman`,
+        c.`customer_phone`
+        FROM customer c
+        INNER JOIN cust_emp_relation cm
+        ON c.id = cm.`customer_id`
+        INNER JOIN employee e
+        ON cm.`emp_id` = e.`id`
+        INNER JOIN shop s
+        ON e.shop_id = s.id
+        <where>
+            <if test="condition !=null " >
+                and c.`customer_name` like CONCAT('%',#{condition},'%') OR customer_linkman LIKE CONCAT('%',#{condition},'%')
+                OR c.customer_phone LIKE CONCAT('%',#{condition},'%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 批量删除 -->
+    <delete id="batchDelete">
+        delete from customer where id in
+        <foreach collection="array" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="batchCust" parameterType="customer">
+        UPDATE customer
+        <set>
+            <if test="customerName != null and customerName != ''">
+                customer_name =#{customerName},
+            </if>
+            <if test="customerLinkman != null and customerLinkman != ''">
+                customer_linkman =#{customerLinkman},
+            </if>
+            <if test="customerPhone != null and customerPhone != ''">
+                customer_phone =#{customerPhone},
+            </if>
+            <if test="customerEmail != null and customerEmail != ''">
+                customer_email =#{customerEmail},
+            </if>
+            <if test="bank != null and bank != ''">
+                bank =#{bank},
+            </if>
+            <if test="bankNum != null and bankNum != ''">
+                bank_num =#{bankNum},
+            </if>
+            <if test="customerAddress != null and customerAddress != ''">
+                customer_address =#{customerAddress},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--添加客户列表-->
+    <insert id="addCustomerstatus" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+          INSERT INTO customer VALUE(null ,#{customerName},#{customerLinkman},#{customerPhone},#{customerEmail},#{bank},#{bankNum},#{customerAddress});
+    </insert>
+
+    <!--获取客户名称-->
+    <select id="findByName" resultMap="CustomerVoMapper" parameterType="com.superman.supermarket.entity.vo.CustomerVo">
+          SELECT customer_name FROM customer WHERE id=#{id}
+    </select>
+
+</mapper>

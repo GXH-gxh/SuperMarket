@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.SpecDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.SpecDetail">
+        <id column="id" property="id" />
+        <result column="spec_detail_name" property="specDetailName" />
+        <result column="spec_id" property="specId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, spec_detail_name, spec_id
+    </sql>
+    <!--添加规格详情-->
+    <insert id="addSpecDetail">
+        INSERT INTO spec_detail(spec_detail_name,spec_id) VALUE(#{specDetailName},#{specId});
+    </insert>
+
+    <!--删除规格详情-->
+    <delete id="deleteSpecDetail">
+        DELETE FROM spec_detail WHERE id in (
+            <foreach collection="ids" separator="," item="id">
+                #{id}
+            </foreach>
+        )
+    </delete>
+
+    <!--根据规格id查询规格详情-->
+    <select id="selectSpecDetailBySpecId" resultType="specDetail">
+        select * from spec_detail where spec_id =#{specId}
+    </select>
+
+    <!--根据规格详情id查询商品信息-->
+    <select id="selectGoodsBySpecDetailId" resultType="long">
+        SELECT COUNT(1) FROM goods WHERE spec_detail_id IN (
+            <foreach collection="ids" item="id" separator=",">
+                #{id}
+            </foreach>
+        )
+
+    </select>
+</mapper>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.WholeOrderMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.WholeOrder">
+        <id column="id" property="id" />
+        <result column="customer_id" property="customerId" />
+        <result column="shop_id" property="shopId" />
+        <result column="place_order_date" property="placeOrderDate" />
+        <result column="ready_date" property="readyDate" />
+        <result column="emp_id" property="empId" />
+        <result column="single_state" property="singleState" />
+        <result column="take_state" property="takeState" />
+    </resultMap>
+
+    <!-- 批发订单Vo映射 -->
+    <resultMap id="WholeOrderMapper" type="com.superman.supermarket.entity.vo.WholeOrderVo" extends="BaseResultMap">
+        <result column="shop_name" property="shopName"></result>
+        <result column="customer_name" property="customerName"></result>
+        <result column="emp_name" property="empName"></result>
+        <result column="emp_phone" property="empPhone"></result>
+        <result column="shop_address" property="shopAddress"></result>
+        <result column="customer_address" property="customerAddress"></result>
+        <result column="customer_linkman" property="customerLinkMan"></result>
+    </resultMap>
+
+
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, customer_id, shop_id, place_order_date, ready_date, emp_id, odetail_id, single_state, take_state
+    </sql>
+
+    <!-- 添加批发订单 返回受影响行数和主键-->
+    <insert id="addWholeOrder" parameterType="com.superman.supermarket.entity.vo.WholeOrderVo" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO whole_order VALUE(NULL,#{customerId},#{shopId},NOW(),#{readyDate},#{empId},#{singleState},#{takeState})
+    </insert>
+
+    <!-- 根据条件查询批发订单信息 -->
+    <select id="findByCondition" resultMap="WholeOrderMapper" parameterType="com.superman.supermarket.entity.vo.WholeOrderVo">
+            select
+                w.`id`,
+                s.`shop_name`,
+                c.`customer_name`,
+                w.`single_state`,
+                w.`take_state`,
+                w.`place_order_date`,
+                e.`emp_name`,
+                e.`emp_phone`,
+                s.`shop_address`,
+                w.`ready_date`
+            from whole_order w
+            inner join shop s
+            on w.`shop_id` = s.`id`
+            inner join customer c
+            on w.`customer_id` = c.`id`
+            inner join employee e
+            on w.`emp_id` = e.`id`
+            <where>
+                <if test="startDate != null and endDate != null">
+                    w.place_order_date  between #{startDate} and #{endDate}
+                </if>
+                <if test="singleState != null">
+                    and w.`single_state` = #{singleState}
+                </if>
+                <if test="takeState != null">
+                    and w.`take_state` = #{takeState}
+                </if>
+                <if test="condition != null and condition != ''">
+                   <!-- and w.`id` like concat('%',#{condition},'%')
+                    or s.`shop_name`like concat('%',#{condition},'%')-->
+                    and c.`customer_name`like concat('%',#{condition},'%')
+                    <!--or e.`emp_name`like concat('%',#{condition},'%')-->
+                    or c.`customer_phone`like concat('%',#{condition},'%')
+                    or c.`customer_address`like concat('%',#{condition},'%')
+                </if>
+            </where>
+    </select>
+    <!-- 根据id查询记录 -->
+    <select id="findById" resultMap="WholeOrderMapper" parameterType="com.superman.supermarket.entity.vo.WholeOrderVo">
+         select
+                w.`id`,
+                s.`shop_name`,
+                c.`customer_name`,
+                w.`single_state`,
+                w.`take_state`,
+                w.`place_order_date`,
+                e.`emp_name`,
+                e.`emp_phone`,
+                s.`shop_address`,
+                w.`ready_date`,
+                c.customer_linkman,
+                c.customer_address
+            from whole_order w
+            inner join shop s
+            on w.`shop_id` = s.`id`
+            inner join customer c
+            on w.`customer_id` = c.`id`
+            inner join employee e
+            on w.`emp_id` = e.`id`
+            where w.id = #{id}
+    </select>
+
+    <!-- 修改批发订单 -->
+    <update id="updateWhole">
+         UPDATE whole_order
+       <set>
+           <if test="customerId != null">
+               customer_id = #{customerId},
+           </if>
+           <if test="shopId != null">
+               shop_id = #{shopId},
+           </if>
+           <if test="empId != null">
+               emp_id = #{empId},
+           </if>
+           <if test="readyDate != null">
+               ready_date = #{readyDate},
+           </if>
+           <if test="singleState != null">
+               single_state = #{singleState}
+           </if>
+           <if test="takeState != null">
+               take_state = #{takeState}
+           </if>
+       </set>
+       WHERE id = #{id}
+    </update>
+</mapper>

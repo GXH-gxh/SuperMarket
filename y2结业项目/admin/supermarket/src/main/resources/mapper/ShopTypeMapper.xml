@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.ShopTypeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.ShopType">
+        <id column="id" property="id" />
+        <result column="shop_type_name" property="shopTypeName" />
+        <result column="createDate" property="createDate" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, shop_type_name, createDate
+    </sql>
+    <!--查询门店分类信息-->
+    <select id="findAllShopType" resultType="shopType">
+		SELECT * FROM shop_type
+	</select>
+
+    <!--添加门店类别-->
+    <insert id="addShopType">
+        INSERT INTO shop_type(id,shop_type_name,createDate) VALUE(#{id},#{shopTypeName},#{createDate})
+    </insert>
+    <!--修改门店类别信息-->
+    <update id="upShopType" parameterType="shoptype">
+        update shop_type
+        <set>
+            <if test="shopTypeName != null and shopTypeName != ''">
+                shop_type_name = #{shopTypeName},
+            </if>
+            <if test="createDate != null and createDate != ''">
+                createDate = #{createDate},
+            </if>
+        </set>
+        where id =#{id}
+    </update>
+
+    <!--删除门店信息-->
+    <delete id="delShopType">
+        <!--update shop set shop_type_id = null where shop_type_id in (<foreach collection="ids" item="item" separator=",">#{item}</foreach>);-->
+        delete from shop_type where id in ( <foreach collection="ids" item="item" separator=",">#{item}</foreach>)
+    </delete>
+
+
+    <!--根据门店类型id查询门店信息-->
+    <select id="selShopByShopTypeId" resultType="shop">
+        SELECT * FROM shop WHERE id IN (<foreach collection="ids" item="item" separator=",">#{item}</foreach>)
+    </select>
+</mapper>

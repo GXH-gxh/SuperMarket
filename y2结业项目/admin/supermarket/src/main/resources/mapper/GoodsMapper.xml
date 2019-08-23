@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.GoodsMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.Goods">
+        <id column="id" property="id" />
+        <result column="goods_name" property="goodsName" />
+        <result column="goods_code" property="goodsCode" />
+        <result column="price" property="price" />
+        <result column="member_price" property="memberPrice" />
+        <result column="whole_price" property="wholePrice" />
+        <result column="cost_price" property="costPrice" />
+        <result column="spec_detail_id" property="specDetailId" />
+        <result column="unit_id" property="unitId" />
+        <result column="goods_type_id" property="goodsTypeId" />
+        <result column="provider_id" property="providerId" />
+        <result column="goods_address" property="goodsAddress" />
+        <result column="yield_date" property="yieldDate" />
+        <result column="expiration_day" property="expirationDay" />
+        <result column="expiration_date" property="expirationDate" />
+    </resultMap>
+
+    <!-- 商品Vo映射 -->
+    <resultMap id="InitMap" type="goodsVo" extends="BaseResultMap">
+        <result column="goods_count" property="goodsCount" />
+        <result column="pro_ame" property="proName" />
+        <result column="spec_tmp_name" property="spceTmpName" />
+        <result column="spec_name" property="specName" />
+        <result column="spec_detail_name" property="specDetailName" />
+        <result property="goodsTypeName" column="goods_type_name"></result>
+        <association property="inventoryDetail" javaType="inventoryDetail" resultMap="com.superman.supermarket.dao.InventoryDetailMapper.BaseResultMap"></association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, goods_name, goods_code, price, member_price, whole_price, cost_price, spec_tmp_id, unit_id, goods_type_id, provider_id, goods_address, yield_date, expiration_day, expiration_date
+    </sql>
+
+    <!-- 初始化根据条件查询商品信息 -->
+    <select id="findByCondition" resultMap="InitMap" parameterType="goodsVo">
+         select g.id,g.goods_code,g.price
+         ,g.member_price,g.whole_price,g.cost_price,
+         idetail.goods_count,
+         gt.goods_type_name,
+         g.goods_type_id,
+         g.yield_date,
+         g.expiration_date,
+         g.expiration_day,
+         p.pro_name,
+         g.goods_code,
+         g.goods_address,
+         g.provider_id,
+         g.spec_detail_id,
+         sd.spec_detail_name,
+         sp.spec_name,
+         st.spec_tmp_name,
+         g.goods_name,
+         g.unit_id
+         from goods g
+         left join inventory_detail idetail
+         on g.id = idetail.goods_id
+         Left join goods_type gt
+         on goods_type_id = gt.id
+         left join provider p
+         on g.provider_id = p.id
+         Left join spec_detail sd
+         on g.spec_detail_id = sd.id
+         left join spec sp
+         on sd.spec_id = sp.id
+         left join spec_tmp st
+         on sp.spec_tmp_id = st.id
+
+        <where>
+            <if test="yieldDate != null">
+                and g.yield_date = #{yieldDate}
+            </if>
+            <if test="expirationDay != null">
+                and g.expiration_date = #{expirationDay}
+            </if>
+            <if test="goodsTypeId != null">
+                and goods_type_id = #{goodsTypeId}
+            </if>
+            <if test="condition != null and condition != ''">
+                and g.goods_name = #{condition} or g.goods_code =  #{condition}
+            </if>
+            <if test="id != null">
+                and g.id =#{id}
+            </if>
+        </where>
+        <if test="sortName != null and sortName != '' and sortType != null and sortType != ''">
+            order by ${sortName} ${sortType}
+        </if>
+    </select>
+
+    <!-- 批量删除 -->
+    <delete id="batchDelete">
+        delete from goods where id in
+        <foreach collection="array" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 批量修改商品类型 -->
+    <update id="batchModify">
+        UPDATE goods SET goods_type_id = #{goodsTypeId} where id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 根据id查询商品信息 -->
+    <select id="findById" resultMap="InitMap" parameterType="goodsVo">
+            select g.goods_code,g.price
+            ,g.member_price,g.whole_price,g.cost_price,
+            idetail.goods_count,
+            gt.goods_type_name,
+            p.pro_name,
+            g.goods_code,
+            g.goods_address,
+            sd.spec_detail_name,
+            sp.spec_name,
+            st.spec_tmp_name
+            from goods g
+            left join inventory_detail idetail
+            on g.id = idetail.goods_id
+            Left join goods_type gt
+            on goods_type_id = gt.id
+            left join provider p
+            on g.provider_id = p.id
+            Left join spec_detail sd
+            on g.spec_detail_id = sd.id
+            left join spec sp
+            on sd.spec_id = sp.id
+            left join spec_tmp st
+            on sp.spec_tmp_id = st.id
+            <where>
+                <if test="id != null">
+                   AND g.id = #{id}
+                </if>
+                <!--根据供应商id查询商品信息-->
+                <if test="providerId != null">
+                    AND g.provider_id = #{providerId}
+                </if>
+            </where>
+    </select>
+
+    <!-- 根据商品id数组查询商品名称 -->
+    <select id="findGoodsNameByIds" resultType="string" parameterType="int">
+        SELECT goods_name FROM goods WHERE id IN
+        <foreach collection="noIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <!--根据商品条码查询库存中的商品信息-->
+    <select id="selGoodsAndInventoryDetailByGoodsCode" resultMap="InitMap">
+        SELECT * FROM goods g
+        INNER JOIN inventory_detail ind
+        ON g.id = ind.goods_id
+        where g.goods_code = #{goodsCode}
+    </select>
+
+</mapper>

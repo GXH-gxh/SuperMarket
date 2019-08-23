@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.SpecMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.Spec">
+        <id column="s_id" property="id" />
+        <result column="spec_name" property="specName" />
+        <result column="spec_tmp_id" property="specTmpId" />
+
+    </resultMap>
+
+    <resultMap id="SpecDetailResultMap" extends="BaseResultMap" type="com.superman.supermarket.entity.Spec">
+        <collection property="sdList" ofType="com.superman.supermarket.entity.SpecDetail">
+            <id column="sd_id" property="id" />
+            <result column="spec_detail_name" property="specDetailName" />
+            <result column="spec_id" property="specId" />
+        </collection>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, spec_name, spec_tmp_id
+    </sql>
+
+    <!--修改规格-->
+    <update id="updateSpec">
+        UPDATE spec
+        <set>
+            <if test="specName != null and specName != ''">spec_name = #{specName}</if>
+        </set>
+        Where id = #{id}
+    </update>
+</mapper>

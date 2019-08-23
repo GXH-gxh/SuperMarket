@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.OrderDetailMapper">
+    <resultMap id="BaseResultMap2" type="com.superman.supermarket.entity.vo.OrderDetailVo">
+        <id column="order_detail_id" property="id" />
+        <result column="goods_id" property="goodsId" />
+        <result column="goods_count" property="goodsCount" />
+        <result column="total_money" property="totalMoney" />
+        <result column="order_id" property="orderId" />
+        <result column="order_type" property="orderType" />
+        <association property="goodsVo" javaType="com.superman.supermarket.entity.vo.GoodsVo">
+            <id column="goods_id" property="id" />
+            <result column="goods_name" property="goodsName" />
+            <result column="goods_code" property="goodsCode" />
+            <result column="price" property="price" />
+            <result column="member_price" property="memberPrice" />
+            <result column="whole_price" property="wholePrice" />
+            <result column="cost_price" property="costPrice" />
+            <result column="spec_detail_id" property="specDetailId" />
+            <result column="unit_id" property="unitId" />
+            <result column="goods_type_id" property="goodsTypeId" />
+            <result column="provider_id" property="providerId" />
+            <result column="goods_address" property="goodsAddress" />
+            <result column="yield_date" property="yieldDate" />
+            <result column="expiration_day" property="expirationDay" />
+            <result column="expiration_date" property="expirationDate" />
+        </association>
+    </resultMap>
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.vo.OrderDetailVo">
+        <id column="id" property="id" />
+        <result column="goods_id" property="goodsId" />
+        <result column="goods_count" property="goodsCount" />
+        <result column="total_money" property="totalMoney" />
+        <result column="order_id" property="orderId" />
+        <result column="order_type" property="orderType" />
+    </resultMap>
+
+    <!--一个明细对应一个商品-->
+    <resultMap id="orderDetailResultMap" type="com.superman.supermarket.entity.vo.OrderDetailVo" extends="BaseResultMap">
+<!--        <association property="goodsVo" javaType="com.superman.supermarket.entity.vo.GoodsVo" resultMap="com.superman.supermarket.dao.GoodsMapper.InitMap"></association>-->
+        <association property="goodsVo" javaType="com.superman.supermarket.entity.vo.GoodsVo">
+            <id column="id" property="id" />
+            <result column="goods_name" property="goodsName" />
+            <result column="goods_code" property="goodsCode" />
+            <result column="price" property="price" />
+            <result column="member_price" property="memberPrice" />
+            <result column="whole_price" property="wholePrice" />
+            <result column="cost_price" property="costPrice" />
+            <result column="spec_detail_id" property="specDetailId" />
+            <result column="unit_id" property="unitId" />
+            <result column="goods_type_id" property="goodsTypeId" />
+            <result column="provider_id" property="providerId" />
+            <result column="goods_address" property="goodsAddress" />
+            <result column="yield_date" property="yieldDate" />
+            <result column="expiration_day" property="expirationDay" />
+            <result column="expiration_date" property="expirationDate" />
+        </association>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, goods_id, goods_count, total_money
+    </sql>
+
+    <!--根据订单号查询订单详情-->
+    <select id="findOrderDateilByOrderId" resultMap="orderDetailResultMap" parameterType="int">
+        SELECT * FROM order_detail od
+        LEFT JOIN goods g
+        ON od.`goods_id` = g.`id`
+        LEFT JOIN spec_detail sd
+        ON g.`spec_detail_id` = sd.`id`
+        WHERE od.order_type = 0
+        AND od.`order_id` = #{id};
+    </select>
+
+    <!-- 添加批发订单明细 -->
+    <insert id="addOrderDetail" parameterType="com.superman.supermarket.entity.OrderDetail">
+        INSERT INTO order_detail VALUE(NULL,#{goodsId},#{goodsCount},#{totalMoney},#{orderId},#{orderType})
+    </insert>
+
+    <!-- 查询批发订单单据金额 -->
+    <select id="findWholeMoney" resultType="double" parameterType="int">
+        SELECT SUM(od.total_money) who_money FROM order_detail od
+        WHERE od.order_id = #{id}
+        AND od.order_type = 1
+        GROUP BY od.order_id
+    </select>
+
+    <!-- 查询批发订单总金额 -->
+    <select id="findWholeTotalMoney" resultType="double">
+        SELECT SUM(od.total_money) FROM order_detail od
+	    WHERE od.order_type = 1
+    </select>
+
+    <!-- 根据批发订单id查询该订单下的订单明细 -->
+    <select id="findByWholeId" resultMap="orderDetailResultMap">
+        SELECT
+		g.goods_code,
+		g.goods_name,
+		sd.spec_detail_name,
+		sp.spec_name,
+		st.spec_tmp_name,
+		g.unit_id,
+		g.price,
+		od.total_money,
+		od.goods_count,
+		od.id,
+		g.id goods_id,
+		g.whole_price
+       FROM order_detail od
+       INNER JOIN whole_order w
+       ON od.order_id = w.`id`
+       INNER JOIN goods g
+       ON od.goods_id = g.id
+       LEFT JOIN spec_detail sd
+       ON g.spec_detail_id = sd.id
+       LEFT JOIN spec sp
+       ON sd.spec_id = sp.id
+       LEFT JOIN spec_tmp st
+       ON sp.spec_tmp_id = st.id
+       WHERE od.order_type = 1
+       AND w.`id` = #{id}
+    </select>
+
+    <!-- 根据明细id删除明细 -->
+    <delete id="deleteById">
+       DELETE FROM order_detail WHERE id = #{id}
+    </delete>
+
+    <!-- 添加批发订单明细 -->
+    <insert id="addWholeOrder">
+        INSERT INTO order_detail VALUE(NULL,#{goodsId},#{goodsCount},#{totalMoney},#{orderId},1);
+    </insert>
+
+    <!-- 修改批发订单明细 -->
+    <update id="updateWholeOrder">
+        UPDATE order_detail SET goods_count = #{goodsCount}
+       WHERE id = #{id}
+    </update>
+    <!--根据订单id和商品id查询批发订单明细中的商品数量-->
+    <select id="getgoodsCountByWholeIdAndGoodsId" resultType="int">
+        SELECT goods_count FROM order_detail
+        WHERE order_id = #{wholeId}
+        AND goods_id = #{goodsId}
+        AND order_type = 1
+    </select>
+</mapper>

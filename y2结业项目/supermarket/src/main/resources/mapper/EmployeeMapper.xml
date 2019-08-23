@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superman.supermarket.dao.EmployeeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.superman.supermarket.entity.Employee">
+        <id column="id" property="id" />
+        <result column="emp_account" property="empAccount" />
+        <result column="emp_pwd" property="empPwd" />
+        <result column="emp_name" property="empName" />
+        <result column="emp_status" property="empStatus" />
+        <result column="emp_phone" property="empPhone" />
+        <result column="createDate" property="createDate" />
+        <result column="shop_id" property="shopId" />
+        <result column="role_id" property="roleId" />
+        <!--
+            配置用户与角色关系
+        -->
+        <association property="roles" javaType="com.superman.supermarket.entity.Roles">
+            <id property="id" column="roles_id"></id>
+            <result property="roleName" column="role_name"></result>
+        </association>
+
+        <!--
+            配置用户与门店的关系
+           -->
+        <association property="shop" javaType="com.superman.supermarket.entity.Shop">
+            <id property="id" column="shop_id"></id>
+            <result column="shop_name" property="shopName" />
+        </association>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, emp_account, emp_pwd, emp_name, role_id, emp_status, emp_phone, createDate, shop_id
+    </sql>
+
+    <!-- 根据用户id关联查询用户角色和门店信息 -->
+   <!-- <select id="findEmpById" parameterType="int" resultMap="BaseResultMap">
+        SELECT emp.*,r.`id` roles_id,r.`role_name`,s.`shop_name`
+        FROM employee emp,roles r,shop s
+        where emp.`role_id` = r.`id`
+        and emp.`shop_id` = s.`id`
+        AND emp.`id` = #{id}
+    </select>-->
+
+    <select id="findEmpById" parameterType="int" resultMap="BaseResultMap">
+        SELECT emp.*,r.`id` roles_id,r.`role_name`,s.`shop_name`
+        FROM employee emp
+        LEFT JOIN roles r
+        ON emp.`role_id` = r.`id`
+        LEFT JOIN shop s
+        ON emp.`shop_id` = s.`id`
+        WHERE emp.`id` = #{id}
+    </select>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="getEmployeeByEmpAccount" parameterType="string" resultMap="BaseResultMap">
+       SELECT * FROM employee e WHERE e.`emp_account`= #{account}
+    </select>
+
+    <!--
+        根据条件查询员工信息
+        根据员工角色,状态,归属门店,账号,用户名称,用户电话
+     -->
+    <select id="findEmpByCondition" resultMap="BaseResultMap" parameterType="employee">
+        /*SELECT emp.*,r.`id` roles_id,r.`role_name`, s.id shop_id, s.shop_name
+        FROM employee emp,roles r,shop s*/
+        SELECT emp.*,r.`id` roles_id,r.`role_name`,s.`shop_name`
+        FROM employee emp
+        LEFT JOIN roles r
+        ON emp.`role_id` = r.`id`
+        LEFT JOIN shop s
+        ON emp.`shop_id` = s.`id`
+        <where>
+           <!--AND emp.`role_id` = r.`id`
+            AND emp.shop_id = s.id-->
+            <if test="roleId != null">
+                AND emp.role_id = #{roleId}
+            </if>
+            <if test="empStatus != null">
+                AND emp.emp_status = #{empStatus}
+            </if>
+            <if test="condition != null and condition != ''">
+                AND s.shop_name = #{condition}
+                or emp.emp_account = #{condition}
+                or emp.emp_name = #{condition}
+                or emp.emp_phone = #{condition}
+            </if>
+            <if test="shopId != null">
+                and e.shop_id =#{shopId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 添加员工 -->
+    <insert id="addEmp" parameterType="employee">
+        INSERT INTO employee VALUE(NULL,#{empAccount},#{empPwd},#{empName},NULL,0,#{empPhone},NOW(),#{shopId});
+    </insert>
+
+    <!-- 修改员工状态 -->
+    <update id="modifyEmpById" parameterType="employee">
+        UPDATE employee
+        <set>
+            <if test="empStatus != null">
+                emp_status = #{empStatus},
+            </if>
+            <if test="empName != null and empName != ''">
+                emp_name = #{empName},
+            </if>
+            <if test="empPhone != null and empPhone != ''">
+                emp_phone = #{empPhone},
+            </if>
+            <if test="roleId != null">
+                role_id = #{roleId},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 查询所有员工信息 -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT *,r.id roles_id,s.id shop_id
+        FROM employee emp
+        LEFT JOIN roles r
+        ON emp.role_id = r.id
+        LEFT JOIN shop s
+        ON emp.shop_id = s.id
+    </select>
+
+    <!-- 根据员工id查询门店信息 -->
+    <select id="selectfindshop" resultType="shop">
+        SELECT * FROM employee  e
+        INNER JOIN shop s ON e.shop_id = s.id WHERE e.id =#{id}
+    </select>
+
+    <!-- 修改门店信息 -->
+    <update id="updatefindshop" parameterType="shop">
+        UPDATE shop
+        <set>
+            <if test="shopName != null and shopName != ''">
+                shop_name=#{shopName},
+            </if>
+
+            <if test="shopLinkman != null and shopLinkman != ''">
+                shop_linkman=#{shopLinkman},
+            </if>
+
+            <if test="shopHours != null and shopHours != ''">
+                shop_hours=#{shopHours},
+            </if>
+
+            <if test="shopAdvice != null and shopAdvice != ''">
+                shop_advice=#{shopAdvice},
+            </if>
+
+            <if test="shopAddress != null and shopAddress != ''">
+                shop_address=#{shopAddress}
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!--修改登录账号的密码-->
+    <update id="updateEmpPwdByEmpId" parameterType="employee">
+        update employee
+        <set>
+            <if test="empPwd != null and empPwd != ''">
+                emp_pwd = #{empPwd},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>
